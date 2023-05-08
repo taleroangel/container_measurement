@@ -6,8 +6,7 @@ COPY . /home/application
 WORKDIR /home/application
 
 # Install dependencies
-RUN ["apk", "update"]
-RUN ["apk", "add", "build-base", "pkgconf", "cmake", "ninja", "python3", "python3-dev", "py3-pip", "py3-setuptools", "py3-wheel", "opencv", "opencv-dev", "fmt-dev", "perf"]
+RUN ["apk", "add", "--no-cache", "build-base", "pkgconf", "cmake", "ninja", "python3", "python3-dev", "py3-pip", "py3-setuptools", "py3-wheel", "opencv", "opencv-dev", "fmt-dev", "perf"]
 
 # Build-system installation and setup
 RUN ["pip3", "install", "meson", "conan", "glances", "bottle"]
