@@ -21,4 +21,4 @@ EXPOSE 24111
 EXPOSE 24112
 
 # Entry point
-ENTRYPOINT ["sh", "./scripts/glances_server.sh"]
+ENTRYPOINT ["sh", "./scripts/runner.sh"]
