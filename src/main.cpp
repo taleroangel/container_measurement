@@ -1,9 +1,9 @@
+#include "opencv2/core/mat.hpp"
 #include <cassert>
 #include <cstddef>
 #include <cstdio>
 #include <cstdlib>
 
-#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <ostream>
@@ -21,49 +21,41 @@
 /* --------- Function declarations --------- */
 cv::Mat read_kernel(std::string path);
 cv::Mat convolute_image(cv::Mat image, cv::Mat kernel);
-std::vector<std::string> find_files_in_directory(std::filesystem::path,
-                                                 std::string filter);
 
 /* --------- Main function --------- */
 int main(int argc, char *argv[]) {
 
   // Vallidate parameters
-  std::string input_directory;
-  std::string input_extension;
-  std::string output_extension;
+  std::string input_file;
+  std::string output_file;
   std::string kernel_path;
   bool use_grayscale = false;
-  int repeat = 0;
+  int do_times = 1;
 
   auto cli = (
       // Input directory
       ((clipp::required("-i", "--input") &
-        clipp::value("input_directory", input_directory)) %
-       "Input directory from which the files will be grabbed"),
-
-      // File extension
-      ((clipp::required("-e", "--extension") &
-        clipp::value("extension_filter", input_extension)) %
-       "File extension filtering"),
+        clipp::value("input_file", input_file)) %
+       "Input file to process"),
 
       // Output file extension
       ((clipp::required("-o", "--output") &
-        clipp::value("output_extension", output_extension)) %
-       "Result file extension"),
+        clipp::value("output_file", output_file)) %
+       "Output file name"),
 
       // Output file extension
       ((clipp::required("-k", "--kernel") &
         clipp::value("kernel_file", kernel_path)) %
-       "Convolution kernel file"),
+       "Convolution kernel file (.kernel)"),
 
       // Use grayscale
       (clipp::option("-g", "--grayscale").set(use_grayscale) %
-       "Transform to grayscale"),
+       "Transform to grayscale before processing"),
 
       // Repeat transformation
-      ((clipp::option("-r", "--repeat") &
-        clipp::opt_integer("n_times=0", repeat)) %
-       "Repeat the transformation n times (0 by default)"));
+      ((clipp::option("-t", "--times") &
+        clipp::opt_integer("n_times=1", do_times)) %
+       "Do the convolution n times (1 by default)"));
 
   if (!clipp::parse(argc, argv, cli)) {
     std::cerr << std::flush;
@@ -71,8 +63,7 @@ int main(int argc, char *argv[]) {
     std::cerr << std::endl
               << clipp::make_man_page(cli, argv[0])
                      .prepend_section("DESCRIPTION",
-                                      "Apply a convolution kernel to a group "
-                                      "of images in a directory")
+                                      "Apply a convolution kernel to an image")
                      .prepend_section(
                          "CREDITS",
                          "Angel D. Talero (angelgotalero@outlook.com) under "
@@ -84,32 +75,12 @@ int main(int argc, char *argv[]) {
                "ApplyConvolution - @taleroangel");
     fmt::print(
         fmt::fg(fmt::color::indigo) | fmt::emphasis::italic,
-        "\nApply a convolution kernel to multiple images in a directory\n");
+        "\nApply a convolution kernel to an image\n");
   }
 
-  // Obtain parameters
-  fmt::print(fmt::fg(fmt::color::purple), "\nCurrent Directory: '{}'\n",
-             input_directory);
-  fmt::print(fmt::fg(fmt::color::purple), "File Extension: '{}'\n",
-             input_extension);
-
-  std::vector<std::string> files;
-
-  try {
-    // Obtain files from filesystem
-    files = find_files_in_directory(input_directory, input_extension);
-  } catch (const std::filesystem::filesystem_error &e) {
-    fflush(stdout);
-    fmt::print(stderr, fmt::bg(fmt::color::red), "[{}]",
-               "Failed to load directory");
-    fmt::print(stderr, fmt::fg(fmt::color::red), "\t{}\n", e.what());
-    return EXIT_FAILURE;
-  }
-
-  // Show files in filesystem
-  for (const auto &file : files) {
-    fmt::print(fmt::emphasis::italic, "\t{}\n", file);
-  }
+  // Show parameters
+  fmt::print(fmt::fg(fmt::color::purple), "\nInput File: '{}'\n", input_file);
+  fmt::print(fmt::fg(fmt::color::purple), "Output File: '{}'\n", output_file);
 
   // Show OpenCV version
   fmt::print(fmt::fg(fmt::color::blue_violet), "\nUsing OpenCV version: {}\n",
@@ -117,7 +88,7 @@ int main(int argc, char *argv[]) {
 
   // Show additional information
   fmt::print(fmt::fg(fmt::color::blue), "Grayscale: {}\n", use_grayscale);
-  fmt::print(fmt::fg(fmt::color::blue), "Additional Repeats: {}\n", repeat);
+  fmt::print(fmt::fg(fmt::color::blue), "Additional Repeats: {}\n", do_times);
 
   // Read the kernel
   cv::Mat kernel;
@@ -126,6 +97,7 @@ int main(int argc, char *argv[]) {
     fmt::print(fmt::fg(fmt::color::blue_violet), "Using Kernel: {}\n",
                kernel_path);
     kernel = read_kernel(kernel_path);
+    // Print the kernel
     std::cout << kernel << std::endl;
   } catch (...) {
     fflush(stdout);
@@ -135,51 +107,42 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
-  // Process every image
-  fmt::print(fmt::fg(fmt::color::medium_blue), "\nImage processing:\n");
-  for (const auto &file : files) {
-    // Read image
-    fmt::print(fmt::fg(fmt::color::yellow), "{}\t", file);
-    fflush(stdout);
-    cv::Mat image = cv::imread(file, use_grayscale ? cv::IMREAD_GRAYSCALE
-                                                   : cv::IMREAD_COLOR);
+  // Initialize
+  fmt::print(fmt::fg(fmt::color::navy), "\nApplying convolutions to image\n");
+  // Read image
+  fmt::print(fmt::fg(fmt::color::yellow), "[{}]\t", input_file);
+  fflush(stdout);
 
-    try {
-      // Calculate convolution
-      auto result = convolute_image(image, kernel);
+  // Import image matrix OpenCV
+  cv::Mat image = cv::imread(input_file, use_grayscale ? cv::IMREAD_GRAYSCALE
+                                                       : cv::IMREAD_COLOR);
 
-      // Additional iterations
-      for (int it = 0; it < repeat; it++) {
-        std::cout << ". " << std::flush;
-        result = convolute_image(result, kernel);
-      }
-
-      // Calculate output filename
-      std::string result_filename{file};
-      result_filename.replace(file.find(input_extension),
-                              input_extension.length(), output_extension.data(),
-                              output_extension.length());
-
-      // Write image
-      fmt::print("{}\t", result_filename);
-      fflush(stdout);
-      cv::imwrite(result_filename, result);
-
-      // Finalize
-      fmt::print(fmt::bg(fmt::color::green), "OK");
-    } catch (const cv::Exception &e) {
-      // Show an OpenCV Exception
-      fmt::print(fmt::bg(fmt::color::red), "OpenCVException");
-      fmt::print(fmt::fg(fmt::color::red), "\t{}\t", e.what());
-    } catch (...) {
-      // Show generic exception
-      fmt::print(fmt::bg(fmt::color::red), "UnknownException");
+  try {
+    // Repeat convolution do_times
+    for (int it = 0; it < do_times; it++) {
+      // Show a processing indicator
+      std::cout << ". " << std::flush;
+      // Repeat the convolution
+      image = convolute_image(image, kernel);
     }
 
-    std::cout << std::endl;
+    // Write image
+    fmt::print("\t{} ", output_file);
+    fflush(stdout);
+    cv::imwrite(output_file, image);
+
+    // Finalize
+    fmt::print(fmt::bg(fmt::color::green), "OK");
+  } catch (const cv::Exception &e) {
+    // Show an OpenCV Exception
+    fmt::print(fmt::bg(fmt::color::red), "\tOpenCVException");
+    fmt::print(fmt::fg(fmt::color::red), "\t{}\t", e.what());
+  } catch (...) {
+    // Show generic exception
+    fmt::print(fmt::bg(fmt::color::red), "\tUnknownException");
   }
 
-  fmt::print(fmt::fg(fmt::color::green), "\nFinished procedure!\n");
+  std::cout << std::endl;
   return EXIT_SUCCESS;
 }
 
@@ -227,19 +190,6 @@ cv::Mat read_kernel(std::string path) {
   }
 
   return kernel;
-}
-
-std::vector<std::string> find_files_in_directory(std::filesystem::path path,
-                                                 std::string filter) {
-  std::vector<std::string> entries;
-  for (const auto &entry : std::filesystem::directory_iterator(path)) {
-    if (entry.is_regular_file() &&
-        (entry.path().native().find(filter) != std::string::npos)) {
-      entries.push_back(entry.path());
-    }
-  }
-
-  return entries;
 }
 
 cv::Mat convolute_image(cv::Mat image, cv::Mat kernel) {

@@ -18,6 +18,6 @@ dependencies = [
 
 exe = executable(
 		'apply_convolution',
-		'main.cpp',
+		files('./src/main.cpp'),
 		dependencies: dependencies
 	)
