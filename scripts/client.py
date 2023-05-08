@@ -4,6 +4,7 @@ import argparse
 import pickle
 import content
 import os
+from colorama import Back, Fore, Style
 
 # Create the argument parser
 parser = argparse.ArgumentParser(
@@ -26,6 +27,7 @@ parser.add_argument('-g', '--grayscale', action='store_true',
                     help="Open the image as a grayscale")
 
 # Parse arguments
+print(Back.YELLOW + f"ApplyConvolution Client - @taleroangel" + Style.RESET_ALL)
 ARGUMENTS = parser.parse_args()
 
 # Create request
@@ -42,7 +44,8 @@ CLIENT_SOCKET = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 # Connect to remote server
 CLIENT_SOCKET.connect((ARGUMENTS.address, ARGUMENTS.port))
-print("Connection to server established")
+print(Fore.YELLOW +
+      f"Connected to server: [{ARGUMENTS.address}:{ARGUMENTS.port}]\n" + Style.RESET_ALL)
 
 # Show the request
 print(request)
@@ -50,16 +53,15 @@ print(request)
 # Send size
 content_size = len(serialized).to_bytes(6, 'little', signed=False)
 CLIENT_SOCKET.send(content_size, socket.MSG_MORE)
-print(f"ContentSize (bytes) sent: {len(serialized)} [{len(content_size)}]")
 
 # Send content
 CLIENT_SOCKET.sendall(serialized)
-print("Request was sent to the Server")
+print(Fore.YELLOW + f"\n💡 Request sent to server ({len(serialized)} bytes)")
 
 # Read size
 data_size = CLIENT_SOCKET.recv(6, socket.MSG_WAITALL)
 data_size = int.from_bytes(data_size, 'little', signed=False)
-print(f"DataSize (bytes): {data_size}")
+print(f"⚡️ Recieved server response ({data_size} bytes)\n" + Style.RESET_ALL)
 
 # Read data
 serialized_content = CLIENT_SOCKET.recv(data_size, socket.MSG_WAITALL)
@@ -80,5 +82,5 @@ print(deserialized_response)
 # Store it
 deserialized_response.output.store(ARGUMENTS.output)
 
-print("Closed connection with server")
-print(f"Result stored in: {ARGUMENTS.output}")
+print("\nClosed connection with server")
+print(Fore.GREEN + f"Result stored in: '{ARGUMENTS.output}'" + Style.RESET_ALL)

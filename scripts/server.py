@@ -34,7 +34,7 @@ class InterruptionHandler():
 
 def client_handler(connection: socket.socket, address):
     # Print information
-    print(f"[{threading.current_thread().name}] New connection from: {address}")
+    print(f"\n[{threading.current_thread().name}] New connection from: {address}")
 
     # Read size
     data_size = connection.recv(6, socket.MSG_WAITALL)
@@ -61,6 +61,9 @@ def client_handler(connection: socket.socket, address):
 
     # Close the connection
     connection.close()
+
+    # Print and exit
+    print(f"Finished processing: [{threading.current_thread().name}]\n")
     exit(0)
 
 

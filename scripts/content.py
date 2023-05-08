@@ -25,7 +25,7 @@ class ContentRequest:
         self.grayscale = grayscale
 
     def __str__(self) -> str:
-        return f"Request[\n\tinput: {self.input}\n\tkernel: {self.kernel}\n\ttime: {self.times}\n\tgrayscale: {self.grayscale}\n]"
+        return f"Request[\n\tinput: {self.input}\n\tkernel: {self.kernel}\n\ttimes: {self.times}\n\tgrayscale: {self.grayscale}\n]"
 
 
 class ContentResponse:
@@ -33,4 +33,4 @@ class ContentResponse:
         self.output = output
 
     def __str__(self) -> str:
-        return f"Response[output: {self.output}]"
+        return f"Response[\n\toutput: {self.output}\n]"
