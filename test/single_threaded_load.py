@@ -15,7 +15,7 @@ FILTERS_DIRECTORY = path.normpath('./filters/')
 RESULTS_DIRECTORY = path.normpath(f'./test/results/{INSTANCE_UUID}/')
 
 # Application executable
-CLIENT = path.normpath('./scripts/client.py')
+CLIENT = path.normpath('./src/client.py')
 
 # Ensure file exists
 assert path.exists(CLIENT), "Application executable missing"

@@ -1,8 +1,8 @@
+/src/__pycache__/
 /.vscode/
 /.git/
 /build/
 /test/
-/run/
 .gitignore
 .dockerignore
 Dockerfile

@@ -24,17 +24,17 @@ case $option in
     ;;
     1)
         echo -e "Running server in vanilla mode\n"
-        exec ./scripts/server.py
+        exec ./src/server.py
     ;;
     2)
         echo -e "Running server with glances monitoring\n"
         glances -w -p 24112 & # Run Glances
-		exec python3 ./scripts/server.py # Run server
+		exec python3 ./src/server.py # Run server
     ;;
     3)
         echo -e "Running server with perf monitoring\n"
 		# Exec with perf recording enabled (perf.data)
-        exec perf record -g --sample-cpu ./scripts/server.py
+        exec perf record -g --sample-cpu ./src/server.py
     ;;
     *)
         echo "Invalid option"
